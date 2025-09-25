@@ -39,7 +39,18 @@ RUN curl https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud
     google-cloud-sdk/install.sh --quiet && \
     ln -s /google-cloud-sdk/bin/gcloud /usr/bin/gcloud
 
-RUN add-apt-repository ppa:longsleep/golang-backports && apt update && apt install -y golang-go
+ENV GO_VERSION 1.25.1
+ENV GO_DOWNLOAD_BASE_URL https://dl.google.com/go/
+RUN ARCH="$(uname -m)" && \
+    case "$ARCH" in \
+        x86_64) GO_ARCH="amd64" ;; \
+        aarch64) GO_ARCH="arm64" ;; \
+        *) echo "Unsupported architecture: $ARCH" >&2; exit 1 ;; \
+	esac && \
+    GO_FILENAME="go${GO_VERSION}.linux-${GO_ARCH}.tar.gz" && \
+    GO_URL="${GO_DOWNLOAD_BASE_URL}${GO_FILENAME}" && \
+    curl -sSL "${GO_URL}" | tar -xz -C /usr/local
+ENV PATH=$PATH:/usr/local/go/bin
 
 # Download the official bazel binary. The APT repository isn't used because there is not packages for arm64.
 COPY bazelversion .
